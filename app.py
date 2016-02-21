@@ -1,63 +1,87 @@
-from flask import Flask
+import os
+from flask import Flask, request, session, g, redirect, url_for, \
+     abort, render_template, flash
 from firebase import firebase
 from werkzeug import generate_password_hash, check_password_hash
+
 import requests
 
 app = Flask(__name__)
-capitalAPIkey = ''
-capitalUserID = ''
+SECRET_KEY = 'this should be a secret key';
+capitalAPIkey = 'b17c7f357d390d8a6a36badc619283a7'
+capitalAccountID = ''
 capitalAPIURl = 'api.reimaginebanking.com/'
-#firebase = firebase.FirebaseApplication('https://pennysum.firebaseIO.com', None)
-#post = {"name": "Akash", "password":generate_password_hash("Hey")}
-#print(firebase.put('/users', "Akash", post))
-#autentication = firebase.Authentication('PASSWORD', 'akash22jain@gmail.com')
-#firebase.authentication = authentication
+firebase = firebase.FirebaseApplication('https://pennysum.firebaseIO.com', None)
+
 @app.route('/')
-def home_page():        
-    return 'Hello world!'
-'''
-'''
+def home_page():
+    return render_template('index.html')
+
+@app.route('/landing')
+def landing():
+    return render_template('landing.html')
+
 @app.route('/login')
-    #return render_template('login.html')
+def login():
+    return render_template('login.html');
 
-@app.route('/addUser', method=['POST'])
+@app.route('/addUser', methods=['GET', 'POST'])
 def add_user():
-    user_name = request.form['inputName']
-    user_email = request.form['inputEmail']
+    print("inside add_user");
+    print(request);
+	# return "hello world";
+	# print("add user");
+	
+    user_username = request.form['inputUserName']
+    # user_name = request.form['inputName']
+    # user_email = request.form['inputEmail']
     user_password = request.form['inputPassword']
-    user_type= request.form['inputType']
-    user_payment_info = request.form['inputPaymentInfo']
-    user_frequency = request.form['inputFrequency']
-    user_amount = request.form['inputAmount']
-    # validate the received values  
-    if not (user_name and user_email and user_password and 
-        user_type and user_payment_info and user_frequency and
-        user_amount):       
-        return json.dumps({'status':'ERROR', 'errorMessage':'Enter all fields!'})   
-    else:
-        post = {"name": user_name, "password":generate_password_hash(user_password)
-        , "email":user_email, "type" = user_type, "paymentInfo" = user_payment_info,
-        "frequency" = user_frequency, "amount" = user_amount}
-        firebase.put('/users', user_email, post)
-        return json.dumps({'status':'OK', 'redirect':url_for('schedule')})
-
-
-@app.route('/checkAuth', method=['POST'])
-def check_auth():
+    print(user_email)
+    print(user_password)
+    # user_type= request.form['inputType']
+    # user_payment_info = request.form['inputPaymentInfo']
+    # user_frequency = request.form['inputFrequency']
+    # user_amount = request.form['inputAmount']
+    # # validate the received values  
+    # if not (user_username and user_name and user_email and user_password and 
+    #     user_type and user_payment_info and user_frequency and
+    #     user_amount):       
+    #     return json.dumps({'status':'ERROR', 'errorMessage':'Enter all fields!'})   
+    # else:
+    #     post = {"username":user_username, "name": user_name, "password":generate_password_hash(user_password)
+    #     , "email":user_email, "type": user_type, "paymentInfo" : user_payment_info,
+    #     "frequency" : user_frequency, "amount" : user_amount}
+    #     firebase.put('/users', user_email, post)
+	# return json.dumps({'status':'OK', 'redirect':url_for('main')})
+    return render_template('main.html')
     
-    user_email = request.form['inputEmail'] 
+
+@app.route('/checkAuth', methods=['GET', 'POST'])
+def check_auth():
+    user_name = request.form['inputUsername'] 
     user_password = request.form['inputPassword']   
-    # validate the received values  
-    if not (user_email and user_password):      
-        return json.dumps({'status':'ERROR', 'errorMessage':'Enter all fields!'})   
-    else:
-    document = firebase.get('/users', user_email)
-        if not document:
-            return json.dumps({'status':'ERROR', 'errorMessage':"Email ID doesn't exist! Try again!"})
-        elif check_password_hash(document["password"], user_password):
-            return json.dumps({'status':'OK', 'redirect':url_for('schedule')})
+    if request.method == 'POST':
+        print(user_name)
+        print(user_password)
+        # validate the received values  
+        if not (user_name and user_password):
+            print("empty fields")      
+            return json.dumps({'status':'ERROR', 'errorMessage':'Enter all fields!'})   
         else:
-            return json.dumps({'status':'ERROR', 'errorMessage':"Incorrect password! Try again!"})
+            document = firebase.get('/users', user_name)
+            if not document:
+                return "Error Username"
+                # return json.dumps({'status':'ERROR', 'errorMessage':"Email ID doesn't exist! Try again!"})
+            # elif check_password_hash(document["password"], user_password):
+            elif user_password == document["password"]:
+                session['logged_in'] = True;
+                return redirect(url_for('landing'))
+                #return json.dumps({'status':'OK', 'redirect':url_for('main')})
+            else:
+                return "Error Credentials"
+                #return json.dumps({'status':'ERROR', 'errorMessage':"Incorrect password! Try again!"})
+
+
 
 @app.route('/homepage')
 def user_home_page():
@@ -75,30 +99,47 @@ Organization
 
 '''
 def get_monthly_amount():
-    document = firebase.get('/users', user_email)
+    document = firebase.get('/users', user_username)
     return document["user_amount"]
 
 def get_user_payments():
-    document = firebase.get('/purchases', 1)
+    user_payment_history_url = 'accounts/{}/purchases?key={}'.format(
+        capitalAccountID, capitalAPIKey)
+    document = requests.get(user_payment_history_url)
+    #document = firebase.get('/purchases', 1)
     listDoc = []
     merchantIDList = []
     for eachPurchase in document:
         date = time.strptime(eachPurchase["purchase_date"], "%Y-%m-%d");
-        if(date == present)
+        if(date == present):
             listDoc.append(eachPurchase)            
     return json.dumps([obj for obj in listDoc])
 
-def get_merchant_by_id(id):
-    document = firebase.get('/merchants', id)
-    return document["name"]
+def get_merchant_by_id(merchantId):
+    merchant_details_url = 'merchants/{}?key={}'.format(
+        merchantOd, capitalAPIKey)
+    #document = firebase.get('/merchants', id)
+    document = requests.get(merchant_details_url)
+    if document["category"] == "Restaurant":
+        return document["name"]
+    return None 
 
-def transfer_payment(senderId, receiverID, amount):
+def transfer_payment(senderID, receiverID, amount):
+    dataPost = {
+  "medium": "balance",
+  "payee_id": reeiverID,
+  "amount": amount,
+  "transaction_date": time.strftime("%Y-%m-%d"),
+  "status": "pending",
+  "description": "Transfer to organization"
+    }
     senderDetails = firebase.get('/accounts', senderId)
     receiverDetails = firebase.get('/accounts', receiverID)
-    
-
-# user_detail_url = capitalAPIURl+'/accounts/{}?key={}'.format(capitalUserID, capitalAPIkey)
+    user_transfer_url = capitalAPIURL+"accounts/{}/transfers?key={}".format(senderID, capitalAPIKey)
+    response = requests.post(user_transfer_url, body = dataPos)
+# user_detail_url = capitalAPIURl+'/accounts/{}?key={}'.format(capitalAccountID, capitalAPIkey)
 # response = requests.get(user_detail_url)
 
 if __name__ == '__main__':
+    app.secret_key=os.urandom(12)
     app.run()
