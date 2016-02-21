@@ -89,7 +89,9 @@ def user_home_page():
 
 @app.route('/trackPayments')
 def track_payments():
-    return render_template('track_payments.html')
+    if session['logged_in']:
+
+        return render_template('trackPayments.html')            
 '''
 Login - Check auth 
 Signup - Push data to Firebase
@@ -98,6 +100,22 @@ Track - All payments, merchants
 Organization
 
 '''
+def get_firebase_entries():
+    firebase.get('/donationHistory')
+
+def make_firebase_entries():
+    user_payments = get_user_payments()
+    listUpdated = []
+    for eachPurchase in user_payments:
+        merchant_for_payment = get_merchant_by_id(eachPurchase["merchant_id"])
+        amount = eachPurchase["amount"]
+        date = eachPurchase["purchase_date"]
+        if(math.ceil(amount)-amount) > 0.4:
+            extra_amount = math.ceil(amount)-amount;
+            customJSON = {"original": amount, "extra":extra_amount,
+            "date":date, "merchant":merchant_for_payment}
+            firebase.put('/donationHistory/'+date, ctr, customJSON)                
+
 def get_monthly_amount():
     document = firebase.get('/users', user_username)
     return document["user_amount"]
