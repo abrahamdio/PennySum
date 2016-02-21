@@ -8,7 +8,6 @@ import requests
 import time, math
 capitalMerchantID = '56c66be6a73e492741507624'
 capitalAPIkey = 'b17c7f357d390d8a6a36badc619283a7'
-capitalAccountID = '56c66be6a73e492741507c4b'
 capitalAPIURl = 'http://api.reimaginebanking.com/'
 firebase = firebase.FirebaseApplication('https://pennysum.firebaseIO.com', None)
 '''
@@ -32,19 +31,18 @@ def main():
     #print(get_monthly_amount())
     # print(make_purchase())
 
-def make_purchase(username, amount, merchID, accID):
-    # amount = "8";
-    merchantID = capitalMerchantID;
-    accountID = capitalAccountID;
+def make_purchase(username, amount, merchID, accID):    
+    merchantID = capitalMerchantID;    
+    present =  time.strftime('%Y-%m-%d');
     dataPost = {
-          "merchant_id":"56c66be6a73e492741507624",
+          "merchant_id": merchID,
           "medium": "balance",
-          "purchase_date": "2016-02-21",
+          "purchase_date": present,
           "amount": float(amount),
           "status": "pending",
           "description": "string"
     }
-    user_purchase_url = '{}accounts/{}/purchases?key={}'.format(capitalAPIURl, capitalAccountID, capitalAPIkey)
+    user_purchase_url = '{}accounts/{}/purchases?key={}'.format(capitalAPIURl, accID, capitalAPIkey)
     resp = requests.post(user_purchase_url, json=dataPost)
     print(type(resp.status_code))
     if resp.status_code < 300:
@@ -68,9 +66,11 @@ def sample_entry():
     firebase.put('/users/'+user_name+'/donationHistory/2015-03-12', 'purch_id_3', customJSON)
 
 def make_firebase_entries(user_name):
-    user_payments = json.loads(get_user_payments())
+    user_payments = json.loads(get_user_payments(user_name))
     # print(json.dumps(user_payments))
     present = time.strftime('%Y-%m-%d');
+    perDayMoney = get_per_day_money(user_name);     
+    print(perDayMoney)   
     for eachPurchase in user_payments:
         fb_purchaseID = firebase.get('users/'+user_name+'/donationHistory/' + present, eachPurchase["_id"])
         if (fb_purchaseID == None):
@@ -78,20 +78,40 @@ def make_firebase_entries(user_name):
             amount = eachPurchase['amount']
             date = eachPurchase['purchase_date']
             pruchaseID = eachPurchase['_id']
+            existingTotal = firebase.get('/users/'+user_name+'/donationHistory/'+date, 'Total');
+            if(existingTotal==None):
+                existingTotal = 0.0          
             if(math.ceil(amount) - amount) <= 0.3:
                 extra_amount = math.ceil(amount)-amount;
                 customJSON = {'original': amount, 
                 'extra':extra_amount,
                 'date':date, 
-                'merchant':merchant_for_payment}            
-                resp = firebase.put('/users/'+user_name+'/donationHistory/'+date, pruchaseID, customJSON);
-                print(resp)
+                'merchant':merchant_for_payment}
+                newTotal = existingTotal+extra_amount
+                print(newTotal)
+                print(existingTotal)
+                if(newTotal < perDayMoney):
+                    resp = firebase.put('/users/'+user_name+'/donationHistory/'+date, pruchaseID, customJSON);
+                    firebase.delete('/users/'+user_name+'/donationHistory/'+date, 'Total')
+                    resp2 = firebase.put('/users/'+user_name+'/donationHistory/'+date, 'Total', newTotal);
+
+def get_per_day_money(user_name):
+    userAmount = float(firebase.get('users/'+user_name, 'amount'))
+    userFrequency = firebase.get('users/'+user_name, 'frequency')
+    if(userFrequency.lower() == 'Monthly'.lower()):
+        timePeriod = 30
+    elif (userFrequency.lower() == 'Biweekly'.lower()):
+        timePeriod = 14
+    else:
+        timePeriod = 7
+    return (userAmount/timePeriod)
 
 def get_monthly_amount(user_username):
     document = firebase.get('/users', user_username)
     return document['amount']
 
-def get_user_payments():
+def get_user_payments(username):
+    capitalAccountID = firebase.get('users/'+username, 'accountNumber')
     user_payment_history_url = '{}accounts/{}/purchases?key={}'.format(capitalAPIURl,
         capitalAccountID, capitalAPIkey)
     document_get = requests.get(user_payment_history_url)
@@ -112,17 +132,23 @@ def get_merchant_by_id(merchantId):
     document = json.loads(document_get.text)
     return document['name'] 
 
-def transfer_payment(senderID, receiverID, amount):
-    dataPost = {'medium': 'balance',
-  'payee_id': receiverID,
-  'amount': amount,
-  'transaction_date': time.strftime("%Y-%m-%d"),
-  'status': 'pending',
-  'description': 'Transfer to organization'
+def make_transfer(username, senderID, receiverID, amount):
+    present = time.strftime('%Y-%m-%d');
+    dataPost = {
+        'medium': 'balance',
+        'payee_id': receiverID,
+        'amount': float(amount),
+        'transaction_date': present,
+        'status': 'pending',
+        'description': 'Transfer to organization'
     }
     
-    user_transfer_url = '{}accounts/{}/transfers?key={}'.format(capitalAPIURl, senderID, capitalAPIKey)
-    response = requests.post(user_transfer_url, json = dataPos)
+    user_transfer_url = '{}accounts/{}/transfers?key={}'.format(capitalAPIURl, senderID, capitalAPIkey)
+    response = requests.post(user_transfer_url, json = dataPost)
+    if response.status_code < 300:
+        return True;
+    else:
+        return False;
 
 if __name__ == '__main__':
     main()

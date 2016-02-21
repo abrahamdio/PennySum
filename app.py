@@ -10,8 +10,8 @@ import requests
 app = Flask(__name__)
 SECRET_KEY = 'this should be a secret key';
 capitalAPIkey = 'b17c7f357d390d8a6a36badc619283a7'
-capitalAccountID = '56c66be6a73e492741507c4b'
 capitalAPIURl = 'http://api.reimaginebanking.com/'
+capitalOrgID = '56c66be6a73e492741507c48'
 #autentication = firebase.Authentication('PASSWORD', 'akash22jain@gmail.com')
 #firebase.authentication = authentication
 firebase = firebase.FirebaseApplication('https://pennysum.firebaseIO.com', None)
@@ -33,8 +33,18 @@ def demo():
         if(session['logged_in'] == False):
             return redirect(url_for('login'))
         else:
-            return render_template('demo.html')
+            accountID = firebase.get('users/' + session['username'], "accountNumber");
+            return render_template('demo.html', accountID=accountID, orgBalance=get_balance(capitalOrgID), currBalance=get_balance(accountID))
     return redirect(url_for('login'))
+
+def get_balance(accID):
+    user_balance_url = '{}accounts/{}?key={}'.format(capitalAPIURl, accID, capitalAPIkey)
+    print(user_balance_url)
+    document_get = requests.get(user_balance_url)
+    if(document_get):
+        document = json.loads(document_get.text)
+        return document['balance'];
+    return -1;
 
 @app.route('/landing')
 def landing():
@@ -131,13 +141,15 @@ def track_payments():
         if(session['logged_in'] == False):
             return redirect(url_for('login'))
         else:
+            present = time.strftime('%Y-%m-%d');
             current_username = session['username']
             current_id = session['cust_id']
+            total = firebase.get('users/' + current_username + '/donationHistory/' + present, "Total")
             # donationHistory = get_user_payments(current_id);
             donationHistory = get_firebase_entries(current_username);
             # users = firebase.get('/users', None, params={'print': 'pretty'});
             # users = json.dumps(users)
-            return render_template('trackPayments.html', donationHistory=donationHistory)
+            return render_template('trackPayments.html', donationHistory=donationHistory, total=total)
     return redirect(url_for('login'))
 
 @app.route('/firebase')
@@ -152,29 +164,18 @@ def makePurchase():
     merchantID = request.form["inputMerchant"];
     accountID = request.form["inputAccount"];
     make_purchase(session['username'], amount, merchantID, accountID)
-    # print(resp);
-    # print(amount)
-    # dataPost = {
-    #     "merchant_id": merchantID,
-    #       "medium": "balance",
-    #       "purchase_date": time.strftime("%Y-%m-%d"),
-    #       "amount": amount,
-    #       "status": "pending",
-    #       "description": "string"
-    # }
-    # user_purchase_url = '{}accounts/{}/purchases?key={}'.format(capitalAPIURl,
-    #     accountID, capitalAPIkey)
-    # print(user_purchase_url)
-    # resp = requests.post(user_purchase_url, data=dataPost)
     return "purchase";
 
 @app.route('/makeTransfer', methods=['POST'])
-def makeTransfer():
-    account = request["inputAccount"]
-    users = firebase.get('/users', None, params={'print': 'pretty'});
-    print users;
-    return json.dumps(users);
-
+def makeTransfer_1():
+    present = time.strftime('%Y-%m-%d');
+    amount = firebase.get('/users/' + session['username'] + '/donationHistory/' + present, 'Total')
+    orgID = request.form["inputOrg"];
+    accountID = request.form["inputAccount"];
+    if(make_transfer(session['username'], accountID, orgID, amount)):
+        return "transfer " + str(amount)
+    else:
+        return "failed to transfer"
 # @app.route('/get_user_payments', methods=['GET'])
 # def get_user_payments(currentID):
 #     user_payment_history_url = '{}accounts/{}/purchases?key={}'.format(capitalAPIURl,
