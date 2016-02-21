@@ -1,6 +1,7 @@
-import os
+import os, json
 from flask import Flask, request, session, g, redirect, url_for, \
      abort, render_template, flash
+from methods import *
 from firebase import firebase
 from werkzeug import generate_password_hash, check_password_hash
 
@@ -11,6 +12,8 @@ SECRET_KEY = 'this should be a secret key';
 capitalAPIkey = 'b17c7f357d390d8a6a36badc619283a7'
 capitalAccountID = ''
 capitalAPIURl = 'api.reimaginebanking.com/'
+#autentication = firebase.Authentication('PASSWORD', 'akash22jain@gmail.com')
+#firebase.authentication = authentication
 firebase = firebase.FirebaseApplication('https://pennysum.firebaseIO.com', None)
 
 @app.route('/')
@@ -18,19 +21,29 @@ def home_page():
     session['logged_in'] = False
     return render_template('index.html')
 
+@app.route('/logout')
+def logout():
+    session['logged_in'] = False
+    session.pop('username', None)
+    return redirect(url_for('login'))
+
 @app.route('/landing')
 def landing():
     if('logged_in' in session):
         if(session['logged_in'] == False):
             return redirect(url_for('login'))
         else:
-            return redirect(url_for('main'))
+            return render_template('landing.html', name=session['username'])
 
     return redirect(url_for('login'))
 
 @app.route('/login')
 def login():
-    session['logged_in'] = False
+    if('logged_in' in session):
+        if(session['logged_in'] == False):
+            return render_template('login.html');
+        else:
+            return redirect(url_for('landing'));
     return render_template('login.html');
 
 @app.route('/register')
@@ -59,14 +72,14 @@ def add_user():
         # check username uniqueness
         return render_template('register.html')  
     else:
-        post = {"username":user_username, "name": user_name, "password":generate_password_hash(user_password)
-        , "email":user_email, "type": user_type, "accountNumber" : user_accountNumber,
-        "frequency" : user_frequency, "amount" : user_amount}
+        post = {'username':user_username, 'name': user_name, 'password':generate_password_hash(user_password)
+        , 'email':user_email, 'type': user_type, 'accountNumber' : user_accountNumber,
+        'frequency' : user_frequency, 'amount' : user_amount}
         firebase.put('/users', user_username, post)
         session['logged_in'] = True;
         session['username'] = user_username;
         return redirect(url_for('landing'))
-	# return json.dumps({'status':'OK', 'redirect':url_for('main')})
+    # return json.dumps({'status':'OK', 'redirect':url_for('main')})
     return "end of func";
     
 
@@ -86,8 +99,7 @@ def check_auth():
             if not document:
                 return "Error Username"
                 # return json.dumps({'status':'ERROR', 'errorMessage':"Email ID doesn't exist! Try again!"})
-            # elif check_password_hash(document["password"], user_password):
-            elif user_password == document["password"]:
+            elif check_password_hash(document["password"], user_password):
                 session['logged_in'] = True;
                 session['username'] = user_name;
                 return redirect(url_for('landing'))
@@ -106,8 +118,18 @@ def track_payments():
         if(session['logged_in'] == False):
             return redirect(url_for('login'))
         else:
-            return render_template('trackPayments.html')
+            current_username = session['username']
+            donationHistory = get_firebase_entries(current_username);
+            # users = firebase.get('/users', None, params={'print': 'pretty'});
+            # users = json.dumps(users)
+            return render_template('trackPayments.html', donationHistory=donationHistory)
     return redirect(url_for('login'))
+
+@app.route('/firebase')
+def firebaseD():
+    users = firebase.get('/users', None, params={'print': 'pretty'});
+    print users;
+    return json.dumps(users);
 
 '''
 Login - Check auth 
@@ -117,63 +139,9 @@ Track - All payments, merchants
 Organization
 
 '''
-def get_firebase_entries():
-    firebase.get('/donationHistory')
-
-def make_firebase_entries():
-    user_payments = get_user_payments()
-    listUpdated = []
-    for eachPurchase in user_payments:
-        merchant_for_payment = get_merchant_by_id(eachPurchase["merchant_id"])
-        amount = eachPurchase["amount"]
-        date = eachPurchase["purchase_date"]
-        if(math.ceil(amount)-amount) > 0.4:
-            extra_amount = math.ceil(amount)-amount;
-            customJSON = {"original": amount, "extra":extra_amount,
-            "date":date, "merchant":merchant_for_payment}
-            firebase.put('/donationHistory/'+date, ctr, customJSON)                
-
-def get_monthly_amount():
-    document = firebase.get('/users', user_username)
-    return document["user_amount"]
-
-def get_user_payments():
-    user_payment_history_url = 'accounts/{}/purchases?key={}'.format(
-        capitalAccountID, capitalAPIKey)
-    document = requests.get(user_payment_history_url)
-    #document = firebase.get('/purchases', 1)
-    listDoc = []
-    merchantIDList = []
-    for eachPurchase in document:
-        date = time.strptime(eachPurchase["purchase_date"], "%Y-%m-%d");
-        if(date == present):
-            listDoc.append(eachPurchase)            
-    return json.dumps([obj for obj in listDoc])
-
-def get_merchant_by_id(merchantId):
-    merchant_details_url = 'merchants/{}?key={}'.format(
-        merchantOd, capitalAPIKey)
-    #document = firebase.get('/merchants', id)
-    document = requests.get(merchant_details_url)
-    if document["category"] == "Restaurant":
-        return document["name"]
-    return None 
-
-def transfer_payment(senderID, receiverID, amount):
-    dataPost = {
-  "medium": "balance",
-  "payee_id": reeiverID,
-  "amount": amount,
-  "transaction_date": time.strftime("%Y-%m-%d"),
-  "status": "pending",
-  "description": "Transfer to organization"
-    }
-    senderDetails = firebase.get('/accounts', senderId)
-    receiverDetails = firebase.get('/accounts', receiverID)
-    user_transfer_url = capitalAPIURL+"accounts/{}/transfers?key={}".format(senderID, capitalAPIKey)
-    response = requests.post(user_transfer_url, body = dataPos)
-# user_detail_url = capitalAPIURl+'/accounts/{}?key={}'.format(capitalAccountID, capitalAPIkey)
-# response = requests.get(user_detail_url)
+def get_firebase_entries(user_username):
+    entry = firebase.get('/users/'+user_username+'/donationHistory', None);
+    return entry
 
 if __name__ == '__main__':
     app.secret_key=os.urandom(12)

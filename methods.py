@@ -90,7 +90,3 @@ def transfer_payment(senderID, receiverID, amount):
     receiverDetails = firebase.get('/accounts', receiverID)
     user_transfer_url = capitalAPIURL+'accounts/{}/transfers?key={}'.format(senderID, capitalAPIKey)
     response = requests.post(user_transfer_url, body = dataPos)
-# user_detail_url = capitalAPIURl+'/accounts/{}?key={}'.format(capitalAccountID, capitalAPIkey)
-# response = requests.get(user_detail_url)
-if __name__=="__main__":
-    main()
