@@ -7,8 +7,8 @@
     <title>Dashboard</title>
     <link rel="stylesheet" href="http://dhbhdrzi4tiry.cloudfront.net/cdn/sites/foundation.min.css" type="text/css" />
     <link href="http://cdnjs.cloudflare.com/ajax/libs/foundicons/3.0.0/foundation-icons.css" rel="stylesheet" type="text/css" />
-    <link rel="stylesheet" type="text/css" href="css/landing.css" />
-    <link rel="stylesheet" href="css/responsive-tables.css">
+    <link rel="stylesheet" type="text/css" href="static/css/landing.css" />
+    <link rel="stylesheet" href="static/css/responsive-tables.css">
     
 <link href="http://cdnjs.cloudflare.com/ajax/libs/foundicons/3.0.0/foundation-icons.css" rel="stylesheet">
 
@@ -27,7 +27,7 @@
           <ul class="menu">
             <!-- <li><input type="search" placeholder="Search"></li> -->
             <li><a href="#settings" class="button">Settings</a></li>
-            <li><a href="#logout" class="button">Logout</a></li>
+            <li><a href="/logout" class="button">Logout</a></li>
           </ul>
         </div>
       </div>
@@ -53,28 +53,10 @@
                                         <th>Merchant</th>
                                       </tr>
                                     </thead>
-                                    <tbody>
-                                      <tr>
-                                        <td>$6.70</td>
-                                        <td>$0.30</td>
-                                        <td>01/01/2016</td>
-                                        <td>BestBuy</td>
-                                      </tr>
-                                      <tr>
-                                        <td>$6.70</td>
-                                        <td>$0.30</td>
-                                        <td>01/01/2016</td>
-                                        <td>BestBuy</td>
-                                      </tr>
-                                      <tr>
-                                        <td>$6.70</td>
-                                        <td>$0.30</td>
-                                        <td>01/01/2016</td>
-                                        <td>BestBuy</td>
-                                      </tr>
+                                    <tbody id="paymentBody">
+
                                     </tbody>
                                   </table>
-                                
                         </div>
                         </div>
                     </div>
@@ -84,27 +66,53 @@
     </div>
     <script src="https://code.jquery.com/jquery-2.1.4.min.js" type="text/javascript"></script>
     <script src="http://dhbhdrzi4tiry.cloudfront.net/cdn/sites/foundation.js" type="text/javascript"></script>
-    <script src="js/responsive-tables.js"></script>
+    <script src="static/js/responsive-tables.js"></script>
     <script type="text/javascript">
         $(document).foundation();   
     </script>
 
     <script type="text/javascript">
-        var json_ex = [
-                            {
-                                "original": 6.70,
-                                "extra":0.30,
-                                "date":"2016-02-20",
-                                "merchant":"Best Buy"
-                            }, 
-                            {
-                                "original": 7.40,
-                                "extra":0.60,
-                                "date":"2016-02-20",
-                                "merchant":"Chipotle"
-                            }
-                        ]
-        console.log(json_ex[1]);
+        var jsonObject = {{ donationHistory | tojson }};
+        for (var key in jsonObject){
+            if (jsonObject.hasOwnProperty(key)) {
+                for(var purchase_key in jsonObject[key]){
+                    var original_ = jsonObject[key][purchase_key]["original"];
+                    var extra_ = jsonObject[key][purchase_key]["extra"];
+                    var original = original_.toFixed(2);
+                    var extra = extra_.toFixed(2);
+                    var date = jsonObject[key][purchase_key]["date"]
+                    var merchant = jsonObject[key][purchase_key]["merchant"]
+                    // console.log(key + " -> " + jsonObject[key][purchase_key]["date"]);
+                    var tr = "<tr>";
+                    tr += "<td> $" + original + "</td>";
+                    tr += "<td> $" + extra + "</td>";
+                    tr += "<td>" + date + "</td>";
+                    tr += "<td>" + merchant + "</td>";
+                    tr += "</tr>";
+                    $('#paymentBody').append(tr);
+                }
+                
+            }  
+        }
+        console.log(jsonObject)
+        // for(var i = 0; i < json_ex.length; i++){
+        //     var original_ = json_ex[i]["original"];
+        //     var extra_ = json_ex[i]["extra"];
+        //     var original = original_.toFixed(2);
+        //     var extra = extra_.toFixed(2);
+        //     var date = json_ex[i]["date"];
+        //     var merchant = json_ex[i]["merchant"];
+
+        //     var tr = "<tr>";
+        //     tr += "<td> $" + original + "</td>";
+        //     tr += "<td> $" + extra + "</td>";
+        //     tr += "<td>" + date + "</td>";
+        //     tr += "<td>" + merchant + "</td>";
+        //     tr += "</tr>";
+        //     $('#paymentBody').append(tr);
+
+        // }
+        // console.log(json_ex[1]);
     </script>
 </body>
 </html>
