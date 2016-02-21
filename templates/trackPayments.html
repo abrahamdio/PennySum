@@ -90,23 +90,21 @@
     </script>
 
     <script type="text/javascript">
-
-        $("#custType").on("change", function(){
-            var type = $("#custType").val();
-            if(type == "individual"){
-                $("#onlyIndividual").show();
-            }
-            else{
-                $("#onlyIndividual").hide();
-            }
-        });
-
-        $("#freqType").on("change", function(){
-            console.log("hello");
-            var freq = $("#freqType").val();
-            $("#freqOutput").html(freq)
-        });
-
+        var json_ex = [
+                            {
+                                "original": 6.70,
+                                "extra":0.30,
+                                "date":"2016-02-20",
+                                "merchant":"Best Buy"
+                            }, 
+                            {
+                                "original": 7.40,
+                                "extra":0.60,
+                                "date":"2016-02-20",
+                                "merchant":"Chipotle"
+                            }
+                        ]
+        console.log(json_ex[1]);
     </script>
 </body>
 </html>

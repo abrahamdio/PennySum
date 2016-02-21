@@ -13,6 +13,15 @@ capitalAccountID = ''
 capitalAPIURl = 'api.reimaginebanking.com/'
 firebase = firebase.FirebaseApplication('https://pennysum.firebaseIO.com', None)
 
+def check_auth():
+    if('logged_in' in session):
+        if(session['logged_in'] == False):
+            return False;
+        else:
+            return True;
+
+    return False;
+
 @app.route('/')
 def home_page():
     session['logged_in'] = False
@@ -20,9 +29,13 @@ def home_page():
 
 @app.route('/landing')
 def landing():
-    if(session['logged_in'] == None or session['logged_in'] == False ):
-        return redirect(url_for('login'))
-    return render_template('landing.html')
+    if('logged_in' in session):
+        if(session['logged_in'] == False):
+            return redirect(url_for('login'))
+        else:
+            return redirect(url_for('main'))
+
+    return redirect(url_for('login'))
 
 @app.route('/login')
 def login():
@@ -85,14 +98,12 @@ def check_auth():
             # elif check_password_hash(document["password"], user_password):
             elif user_password == document["password"]:
                 session['logged_in'] = True;
-                session['username'] = user_username;
+                session['username'] = user_name;
                 return redirect(url_for('landing'))
                 #return json.dumps({'status':'OK', 'redirect':url_for('main')})
             else:
                 return "Error Credentials"
                 #return json.dumps({'status':'ERROR', 'errorMessage':"Incorrect password! Try again!"})
-
-
 
 @app.route('/homepage')
 def user_home_page():
@@ -100,8 +111,12 @@ def user_home_page():
 
 @app.route('/trackPayments')
 def track_payments():
-    if session['logged_in']:
-        return render_template('trackPayments.html') 
+    if('logged_in' in session):
+        if(session['logged_in'] == False):
+            return redirect(url_for('login'))
+        else:
+            return render_template('trackPayments.html')
+    return redirect(url_for('login'))
 '''
 Login - Check auth 
 Signup - Push data to Firebase
