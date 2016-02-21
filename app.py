@@ -4,14 +4,14 @@ from flask import Flask, request, session, g, redirect, url_for, \
 from methods import *
 from firebase import firebase
 from werkzeug import generate_password_hash, check_password_hash
-
+import time
 import requests
 
 app = Flask(__name__)
 SECRET_KEY = 'this should be a secret key';
 capitalAPIkey = 'b17c7f357d390d8a6a36badc619283a7'
-capitalAccountID = ''
-capitalAPIURl = 'api.reimaginebanking.com/'
+capitalAccountID = '56c66be6a73e492741507c4b'
+capitalAPIURl = 'http://api.reimaginebanking.com/'
 #autentication = firebase.Authentication('PASSWORD', 'akash22jain@gmail.com')
 #firebase.authentication = authentication
 firebase = firebase.FirebaseApplication('https://pennysum.firebaseIO.com', None)
@@ -27,13 +27,24 @@ def logout():
     session.pop('username', None)
     return redirect(url_for('login'))
 
+@app.route('/demo')
+def demo():
+    if('logged_in' in session):
+        if(session['logged_in'] == False):
+            return redirect(url_for('login'))
+        else:
+            return render_template('demo.html')
+    return redirect(url_for('login'))
+
 @app.route('/landing')
 def landing():
     if('logged_in' in session):
         if(session['logged_in'] == False):
             return redirect(url_for('login'))
         else:
-            return render_template('landing.html', name=session['username'])
+            freq = firebase.get('users/'+session['username'],'frequency')
+            amount = firebase.get('users/'+session['username'],'amount')
+            return render_template('landing.html', name=session['username'], freq=freq, amount=amount)
 
     return redirect(url_for('login'))
 
@@ -78,6 +89,7 @@ def add_user():
         firebase.put('/users', user_username, post)
         session['logged_in'] = True;
         session['username'] = user_username;
+        session['cust_id'] = user_accountNumber;
         return redirect(url_for('landing'))
 	# return json.dumps({'status':'OK', 'redirect':url_for('main')})
     return "end of func";
@@ -102,6 +114,7 @@ def check_auth():
             elif check_password_hash(document["password"], user_password):
                 session['logged_in'] = True;
                 session['username'] = user_name;
+                session['cust_id'] = '56c66be6a73e492741507c4b'
                 return redirect(url_for('landing'))
                 #return json.dumps({'status':'OK', 'redirect':url_for('main')})
             else:
@@ -119,6 +132,8 @@ def track_payments():
             return redirect(url_for('login'))
         else:
             current_username = session['username']
+            current_id = session['cust_id']
+            # donationHistory = get_user_payments(current_id);
             donationHistory = get_firebase_entries(current_username);
             # users = firebase.get('/users', None, params={'print': 'pretty'});
             # users = json.dumps(users)
@@ -126,10 +141,60 @@ def track_payments():
     return redirect(url_for('login'))
 
 @app.route('/firebase')
-def firebaseD():
+def firebaseTest():
     users = firebase.get('/users', None, params={'print': 'pretty'});
     print users;
     return json.dumps(users);
+
+@app.route('/makePurchase', methods=['POST'])
+def makePurchase():
+    amount = request.form["inputAmount"];
+    merchantID = request.form["inputMerchant"];
+    accountID = request.form["inputAccount"];
+    make_purchase(session['username'], amount, merchantID, accountID)
+    # print(resp);
+    # print(amount)
+    # dataPost = {
+    #     "merchant_id": merchantID,
+    #       "medium": "balance",
+    #       "purchase_date": time.strftime("%Y-%m-%d"),
+    #       "amount": amount,
+    #       "status": "pending",
+    #       "description": "string"
+    # }
+    # user_purchase_url = '{}accounts/{}/purchases?key={}'.format(capitalAPIURl,
+    #     accountID, capitalAPIkey)
+    # print(user_purchase_url)
+    # resp = requests.post(user_purchase_url, data=dataPost)
+    return "purchase";
+
+@app.route('/makeTransfer', methods=['POST'])
+def makeTransfer():
+    account = request["inputAccount"]
+    users = firebase.get('/users', None, params={'print': 'pretty'});
+    print users;
+    return json.dumps(users);
+
+# @app.route('/get_user_payments', methods=['GET'])
+# def get_user_payments(currentID):
+#     user_payment_history_url = '{}accounts/{}/purchases?key={}'.format(capitalAPIURl,
+#         currentID, capitalAPIkey)
+#     print(user_payment_history_url)
+#     document_get = requests.get(user_payment_history_url)
+#     document = json.loads(document_get.text)
+#     # print (document)
+#     # document = firebase.get('/purchases', 1)
+#     listDoc = []
+#     # merchantIDList = []
+#     present = current
+#     for eachPurchase in document:
+#         print(eachPurchase);
+#         date = time.strptime(eachPurchase['purchase_date'], '%Y-%m-%d');
+#         if(date == present):
+#         listDoc.append(eachPurchase)
+#     return json.loads(document_get.text)          
+#     # return json.dumps([obj for obj in listDoc])
+
 
 '''
 Login - Check auth 

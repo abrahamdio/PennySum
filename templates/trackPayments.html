@@ -40,7 +40,7 @@
                             <span class="fi-web"></span>
                         </div>
                         <div class="info">
-                        <h5 class="text-center">You've collected $2.50</h5>
+                        <h5 class="text-center">You've collected $<span id="collected"></span></h5>
                         </div>
                         <div class="row">
                         <div class="">
@@ -73,6 +73,7 @@
 
     <script type="text/javascript">
         var jsonObject = {{ donationHistory | tojson }};
+        var sum = 0;
         for (var key in jsonObject){
             if (jsonObject.hasOwnProperty(key)) {
                 for(var purchase_key in jsonObject[key]){
@@ -83,6 +84,7 @@
                     var date = jsonObject[key][purchase_key]["date"]
                     var merchant = jsonObject[key][purchase_key]["merchant"]
                     // console.log(key + " -> " + jsonObject[key][purchase_key]["date"]);
+                    sum += parseFloat(extra);
                     var tr = "<tr>";
                     tr += "<td> $" + original + "</td>";
                     tr += "<td> $" + extra + "</td>";
@@ -94,25 +96,8 @@
                 
             }  
         }
+        $("#collected").html(sum)
         console.log(jsonObject)
-        // for(var i = 0; i < json_ex.length; i++){
-        //     var original_ = json_ex[i]["original"];
-        //     var extra_ = json_ex[i]["extra"];
-        //     var original = original_.toFixed(2);
-        //     var extra = extra_.toFixed(2);
-        //     var date = json_ex[i]["date"];
-        //     var merchant = json_ex[i]["merchant"];
-
-        //     var tr = "<tr>";
-        //     tr += "<td> $" + original + "</td>";
-        //     tr += "<td> $" + extra + "</td>";
-        //     tr += "<td>" + date + "</td>";
-        //     tr += "<td>" + merchant + "</td>";
-        //     tr += "</tr>";
-        //     $('#paymentBody').append(tr);
-
-        // }
-        // console.log(json_ex[1]);
     </script>
 </body>
 </html>
