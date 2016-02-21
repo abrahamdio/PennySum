@@ -13,15 +13,6 @@ capitalAccountID = ''
 capitalAPIURl = 'api.reimaginebanking.com/'
 firebase = firebase.FirebaseApplication('https://pennysum.firebaseIO.com', None)
 
-def check_auth():
-    if('logged_in' in session):
-        if(session['logged_in'] == False):
-            return False;
-        else:
-            return True;
-
-    return False;
-
 @app.route('/')
 def home_page():
     session['logged_in'] = False
