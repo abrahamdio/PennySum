@@ -152,12 +152,6 @@ def track_payments():
             return render_template('trackPayments.html', donationHistory=donationHistory, total=total)
     return redirect(url_for('login'))
 
-@app.route('/firebase')
-def firebaseTest():
-    users = firebase.get('/users', None, params={'print': 'pretty'});
-    print users;
-    return json.dumps(users);
-
 @app.route('/makePurchase', methods=['POST'])
 def makePurchase():
     amount = request.form["inputAmount"];
