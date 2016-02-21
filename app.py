@@ -15,45 +15,55 @@ firebase = firebase.FirebaseApplication('https://pennysum.firebaseIO.com', None)
 
 @app.route('/')
 def home_page():
+    session['logged_in'] = False
     return render_template('index.html')
 
 @app.route('/landing')
 def landing():
+    if(session['logged_in'] == None or session['logged_in'] == False ):
+        return redirect(url_for('login'))
     return render_template('landing.html')
 
 @app.route('/login')
 def login():
+    session['logged_in'] = False
     return render_template('login.html');
+
+@app.route('/register')
+def register():
+    return render_template('register.html');
 
 @app.route('/addUser', methods=['GET', 'POST'])
 def add_user():
-    print("inside add_user");
-    print(request);
-	# return "hello world";
-	# print("add user");
-	
-    user_username = request.form['inputUserName']
-    # user_name = request.form['inputName']
-    # user_email = request.form['inputEmail']
-    user_password = request.form['inputPassword']
-    print(user_email)
-    print(user_password)
-    # user_type= request.form['inputType']
-    # user_payment_info = request.form['inputPaymentInfo']
-    # user_frequency = request.form['inputFrequency']
-    # user_amount = request.form['inputAmount']
-    # # validate the received values  
-    # if not (user_username and user_name and user_email and user_password and 
-    #     user_type and user_payment_info and user_frequency and
-    #     user_amount):       
-    #     return json.dumps({'status':'ERROR', 'errorMessage':'Enter all fields!'})   
-    # else:
-    #     post = {"username":user_username, "name": user_name, "password":generate_password_hash(user_password)
-    #     , "email":user_email, "type": user_type, "paymentInfo" : user_payment_info,
-    #     "frequency" : user_frequency, "amount" : user_amount}
-    #     firebase.put('/users', user_email, post)
+    if (request.method == "POST"):
+        user_username = request.form['inputUserName']
+        user_name = request.form['inputFullName']
+        user_email = request.form['inputEmail']
+        user_password = request.form['inputPassword']
+        user_type= request.form['inputType']
+        user_accountNumber = request.form['inputAccountNumber']
+    if(user_type == "organization"):
+        user_frequency = "N/A";
+        user_amount = "-1";
+    else:
+        user_frequency = request.form['inputFrequency']
+        user_amount = request.form['inputAmount']
+    
+    # validate the received values  
+    if not (user_username and user_name and user_email and user_password and 
+        user_type):
+        # check username uniqueness
+        return render_template('register.html')  
+    else:
+        post = {"username":user_username, "name": user_name, "password":generate_password_hash(user_password)
+        , "email":user_email, "type": user_type, "accountNumber" : user_accountNumber,
+        "frequency" : user_frequency, "amount" : user_amount}
+        firebase.put('/users', user_username, post)
+        session['logged_in'] = True;
+        session['username'] = user_username;
+        return redirect(url_for('landing'))
 	# return json.dumps({'status':'OK', 'redirect':url_for('main')})
-    return render_template('main.html')
+    return "end of func";
     
 
 @app.route('/checkAuth', methods=['GET', 'POST'])
@@ -75,6 +85,7 @@ def check_auth():
             # elif check_password_hash(document["password"], user_password):
             elif user_password == document["password"]:
                 session['logged_in'] = True;
+                session['username'] = user_username;
                 return redirect(url_for('landing'))
                 #return json.dumps({'status':'OK', 'redirect':url_for('main')})
             else:
@@ -89,7 +100,8 @@ def user_home_page():
 
 @app.route('/trackPayments')
 def track_payments():
-    return render_template('track_payments.html')
+    if session['logged_in']:
+        return render_template('trackPayments.html') 
 '''
 Login - Check auth 
 Signup - Push data to Firebase
@@ -142,4 +154,4 @@ def transfer_payment(senderID, receiverID, amount):
 
 if __name__ == '__main__':
     app.secret_key=os.urandom(12)
-    app.run()
+    app.run(debug=True)
