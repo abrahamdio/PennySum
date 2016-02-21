@@ -27,7 +27,7 @@
                             <form action="{{ url_for('makePurchase') }}" method="post">
                                 <div align="center" class="row column log-in-form">
                                     <label>Account ID
-                                        <input type="text" placeholder="501" name="inputAccount" value="56c66be6a73e492741507c4b"/>
+                                        <input type="text" placeholder="501" name="inputAccount" value="{{accountID}}"/>
                                     </label>
                                     <label>Amount
                                         <input type="text" placeholder="$5.79" name="inputAmount" step="any"/>
@@ -36,8 +36,6 @@
                                         <input type="text" placeholder="201" name="inputMerchant" value="56c66be6a73e492741507624"/>
                                     </label>     
                                     <input id="purchase" type="submit" class="button expanded" value="Purchase!" />
-                                    capitalAccountID = '56c66be6a73e492741507c4b' <br>
-                                    capitalMerchantID = '56c66be6a73e492741507624'
                                 </div>
                             </form>
                         </div>
@@ -49,19 +47,22 @@
                             <span class="fi-dollar-bill"></span>
                         </div>
                         <div class="info">
-                            <h4 class="text-center">Balance Status</h4>
-                            <form action="{{ url_for('check_auth') }}" method="post">
+                            <h4 class="text-center">Transfer</h4>
+                            <form action="{{ url_for('makeTransfer_1') }}" method="post">
                                 <div align="center" class="row column log-in-form">
                                     <label>Account ID
-                                        <input type="text" placeholder="501" name="inputAccount" />
+                                        <input type="text" placeholder="501" name="inputAccount" value="{{accountID}}"/>
                                     </label>
-                                    <label>Final Account Balance
-                                        <input type="text" placeholder="$123" name="inputAccount" />
+                                    <label>Organization ID
+                                        <input type="text" placeholder="54" name="inputOrg" value="56c66be6a73e492741507c48"/>
                                     </label>
-                                    <label>Final Organization Balance
-                                        <input type="text" placeholder="$5.79" name="inputAmount" />
+                                    <label>Current Account Balance
+                                        <input type="text" value="${{currBalance}}" disabled />
                                     </label>
-                                    <p><a href="#" class="button">Transfer</a></p>
+                                    <label>Organization Balance
+                                        <input type="text" value="${{orgBalance}}" disabled/>
+                                    </label>
+                                    <input id="transfer" type="submit" class="button expanded" value="Transfer!" />
                                 </div>
                             </form>
                         </div>
