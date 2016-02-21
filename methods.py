@@ -82,14 +82,13 @@ def make_firebase_entries(user_name):
             if(existingTotal==None):
                 existingTotal = 0.0          
             if(math.ceil(amount) - amount) <= 0.3:
-                extra_amount = math.ceil(amount)-amount;
+                extra_amount = float("{0:.2f}".format(math.ceil(amount)-amount))
                 customJSON = {'original': amount, 
                 'extra':extra_amount,
                 'date':date, 
                 'merchant':merchant_for_payment}
                 newTotal = existingTotal+extra_amount
-                print(newTotal)
-                print(existingTotal)
+                newTotal = float("{0:.2f}".format(newTotal))                
                 if(newTotal < perDayMoney):
                     resp = firebase.put('/users/'+user_name+'/donationHistory/'+date, pruchaseID, customJSON);
                     firebase.delete('/users/'+user_name+'/donationHistory/'+date, 'Total')
