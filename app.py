@@ -19,7 +19,7 @@ firebase = firebase.FirebaseApplication('https://pennysum.firebaseIO.com', None)
 @app.route('/')
 def home_page():
     session['logged_in'] = False
-    return render_template('index.html')
+    return redirect(url_for('login'))
 
 @app.route('/logout')
 def logout():
@@ -33,8 +33,10 @@ def demo():
         if(session['logged_in'] == False):
             return redirect(url_for('login'))
         else:
+            merchants = firebase.get('/merchants', None)
+            print(merchants)
             accountID = firebase.get('users/' + session['username'], "accountNumber");
-            return render_template('demo.html', accountID=accountID, orgBalance=get_balance(capitalOrgID), currBalance=get_balance(accountID))
+            return render_template('demo.html', accountID=accountID, orgBalance=get_balance(capitalOrgID), currBalance=get_balance(accountID), merchants=merchants)
     return redirect(url_for('login'))
 
 def get_balance(accID):
@@ -53,8 +55,9 @@ def landing():
             return redirect(url_for('login'))
         else:
             freq = firebase.get('users/'+session['username'],'frequency')
+            fullName = firebase.get('users/'+session['username'],'name')
             amount = firebase.get('users/'+session['username'],'amount')
-            return render_template('landing.html', name=session['username'], freq=freq, amount=amount)
+            return render_template('landing.html', name=fullName, freq=freq, amount=amount)
 
     return redirect(url_for('login'))
 
@@ -157,8 +160,10 @@ def makePurchase():
     amount = request.form["inputAmount"];
     merchantID = request.form["inputMerchant"];
     accountID = request.form["inputAccount"];
-    make_purchase(session['username'], amount, merchantID, accountID)
-    return "purchase";
+    if(make_purchase(session['username'], amount, merchantID, accountID)):
+        return redirect(url_for('demo'));
+    else:
+        return redirect(url_for('demo'));
 
 @app.route('/makeTransfer', methods=['POST'])
 def makeTransfer_1():
