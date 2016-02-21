@@ -15,35 +15,39 @@
             <div class="off-canvas-content" data-off-canvas-content="">
                 <div class="row">
                     <div class="medium-6 medium-centered large-4 large-centered columns">
-                        <form>
+                        <form action="{{ url_for('add_user') }}" method="post">
                             <div class="row column log-in-form">
                                 <h4 class="text-center">Register</h4>
-                                <label>Email 
-                                    <input type="text" placeholder="somebody@example.com" />
+                                <label>Username
+                                    <input type="text" placeholder="johndoe12" name="inputUserName" required />
                                 </label>
-                                
+                                <label>Full Name
+                                    <input type="text" placeholder="John Doe" name="inputFullName" required/>
+                                </label>
+                                <label>Email
+                                    <input type="text" placeholder="johndoe@example.com" name="inputEmail" required/>
+                                </label>
                                 <label>Password
-                                    <input type="password" placeholder="Password" />
+                                    <input type="password" placeholder="Password" name="inputPassword" required/>
                                 </label>
                                 
                                 <!-- <input id="show-password" type="checkbox" /> -->
                                 <!-- <label for="show-password">Show password</label> -->
                                 
                                 <label>Account Number
-                                    <input type="text" placeholder="Account Number" />
+                                    <input type="text" placeholder="Account Number" name="inputAccountNumber" required/>
                                 </label>
                                 
                                 <label>Customer Type
-                                    <select id="custType" placeholder="">
+                                    <select id="custType" placeholder="" name="inputType" required>
                                         <option value="" selected disabled>Customer Type</option>
                                         <option value="organization">Organization</option>
                                         <option value="individual">Individual</option>
                                     </select>
                                 </label>
-
                                 <div id="onlyIndividual" style="display: none">
                                 <label>Frequency
-                                    <select id="freqType" placeholder="Frequency" >
+                                    <select id="freqType" placeholder="Frequency" name="inputFrequency" >
                                         <option value="" selected disabled>Frequency</option>
                                         <option value="weekly">Weekly</option>
                                         <option value="biweekly">Biweekly</option>
@@ -64,11 +68,11 @@
 
                                     </div>
                                     <div class="small-3 columns">
-                                        <input type="number" id="sliderOutput1" />
+                                        <input type="number" id="sliderOutput1" name="inputAmount" step="any"/>
                                     </div>
                                 </div>
                                 </div>
-                                <p><a type="submit" id="" class="button expanded">Register</a></p>
+                                <input type="submit" class="button expanded" value="Register" />
                             </div>
                                 
                             </div>
